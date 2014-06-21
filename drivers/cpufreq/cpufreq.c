@@ -625,29 +625,6 @@ static ssize_t __ref store_scaling_max_freq(struct cpufreq_policy *policy, const
 	return count;
 }
 
-static ssize_t __ref store_scaling_max_freq_kt(struct cpufreq_policy *policy, const char *buf, size_t count)
-{
-	unsigned int ret = -EINVAL;
-	unsigned int value = 0;
-	struct cpufreq_policy new_policy;
-
-	ret = sscanf(buf, "%u", &value);
-	if (ret != 1)
-		return -EINVAL;
-	
-	if (GLOBALKT_MAX_FREQ_LIMIT >= GLOBALKT_MIN_FREQ_LIMIT && GLOBALKT_MAX_FREQ_LIMIT <= CPUINFO_MAX_FREQ_LIMIT)
-		GLOBALKT_MAX_FREQ_LIMIT = value;
-	else if (GLOBALKT_MAX_FREQ_LIMIT < GLOBALKT_MIN_FREQ_LIMIT)
-		GLOBALKT_MAX_FREQ_LIMIT = GLOBALKT_MIN_FREQ_LIMIT;
-	else
-		GLOBALKT_MAX_FREQ_LIMIT = CPUINFO_MAX_FREQ_LIMIT;
-	return count;
-}
-
-static ssize_t show_scaling_max_freq_kt(struct cpufreq_policy *policy, char *buf)
-{
-	return sprintf(buf, "%u\n", GLOBALKT_MAX_FREQ_LIMIT);
-}
 
 static ssize_t store_scaling_booted(struct cpufreq_policy *policy, const char *buf, size_t count)
 {
@@ -695,6 +672,10 @@ static ssize_t store_enable_oc(struct cpufreq_policy *policy, const char *buf, s
 	ret = sscanf(buf, "%u", &value);
 	
 	isenable_oc = value;
+	if (isenable_oc)
+		GLOBALKT_MAX_FREQ_LIMIT = CPUINFO_MAX_FREQ_LIMIT;
+	else
+		GLOBALKT_MAX_FREQ_LIMIT = 2457600;
 	return count;
 }
 
@@ -1047,7 +1028,6 @@ cpufreq_freq_attr_rw(scaling_min_freq);
 
 
 cpufreq_freq_attr_rw(scaling_max_freq);
-cpufreq_freq_attr_rw(scaling_max_freq_kt);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(scaling_booted);
@@ -1068,7 +1048,6 @@ static struct attribute *default_attrs[] = {
 	&cpuinfo_transition_latency.attr,
 	&scaling_min_freq.attr,
 	&scaling_max_freq.attr,
-	&scaling_max_freq_kt.attr,
 	&affected_cpus.attr,
 	&cpu_utilization.attr,
 #ifdef CONFIG_SEC_PM
@@ -2238,11 +2217,11 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 		goto error_out;
 
 	//Do KT checker
-	//if (policy->cpuinfo.min_freq != GLOBALKT_MIN_FREQ_LIMIT || policy->cpuinfo.max_freq != GLOBALKT_MAX_FREQ_LIMIT)
-	//{
-	//	policy->cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
-	//	policy->cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
-	//}
+	if (policy->cpuinfo.min_freq != GLOBALKT_MIN_FREQ_LIMIT || policy->cpuinfo.max_freq != GLOBALKT_MAX_FREQ_LIMIT)
+	{
+		policy->cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
+		policy->cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
+	}
 	if (policy->min < GLOBALKT_MIN_FREQ_LIMIT || policy->max > GLOBALKT_MAX_FREQ_LIMIT)
 	{
 		policy->min = GLOBALKT_MIN_FREQ_LIMIT;
