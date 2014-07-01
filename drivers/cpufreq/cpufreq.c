@@ -53,9 +53,9 @@ extern ssize_t get_gpu_vdd_levels_str(char *buf);
 extern void set_gpu_vdd_levels(int uv_tbl[]);
 
 static bool Lonoff = false;
-static unsigned int Lscreen_off_scaling_enable = 0;
-static unsigned int Lscreen_off_scaling_mhz = 2457600;
-static unsigned int Lscreen_off_scaling_mhz_orig = 2457600;
+static unsigned int Lscreen_off_scaling_enable = 1;
+static unsigned int Lscreen_off_scaling_mhz = 0;
+static unsigned int Lscreen_off_scaling_mhz_orig = 0;
 static unsigned long Lscreen_off_GPU_mhz = 0;
 static char scaling_governor_screen_off_sel[16];
 static char scaling_governor_screen_off_sel_prev[16];
