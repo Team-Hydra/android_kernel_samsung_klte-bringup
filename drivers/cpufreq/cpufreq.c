@@ -57,17 +57,10 @@ static unsigned int Lscreen_off_scaling_enable = 0;
 static unsigned int Lscreen_off_scaling_mhz = 2457600;
 static unsigned int Lscreen_off_scaling_mhz_orig = 2457600;
 static unsigned long Lscreen_off_GPU_mhz = 0;
-bool call_in_progress=false;
-static unsigned int Ldisable_som_call_in_progress = 0;
 static char scaling_governor_screen_off_sel[16];
 static char scaling_governor_screen_off_sel_prev[16];
 static char scaling_sched_screen_off_sel[16];
 static char scaling_sched_screen_off_sel_prev[16];
-static char scaling_governor_gps_sel[16];
-static char scaling_governor_gps_sel_prev[16];
-static char scaling_sched_gps_sel[16];
-static char scaling_sched_gps_sel_prev[16];
-static bool GPS_override = false;
 extern int elevator_change_relay(const char *name, int screen_status);
 static unsigned int Lenable_auto_hotplug = 0;
 
@@ -798,32 +791,6 @@ static ssize_t store_scaling_governor_screen_off(struct cpufreq_policy *policy,
 	return count;
 }
 
-static ssize_t show_scaling_governor_gps(struct cpufreq_policy *policy, char *buf)
-{
-	return scnprintf(buf, 16, "%s\n", scaling_governor_gps_sel);
-}
-
-static ssize_t store_scaling_governor_gps(struct cpufreq_policy *policy,
-          const char *buf, size_t count)
-{
-	unsigned int ret = -EINVAL;
-	ret = sscanf(buf, "%15s", scaling_governor_gps_sel);
-	return count;
-}
-
-static ssize_t show_scaling_sched_gps(struct cpufreq_policy *policy, char *buf)
-{
-	return scnprintf(buf, 16, "%s\n", scaling_sched_gps_sel);
-}
-
-static ssize_t store_scaling_sched_gps(struct cpufreq_policy *policy,
-          const char *buf, size_t count)
-{
-	unsigned int ret = -EINVAL;
-	ret = sscanf(buf, "%15s", scaling_sched_gps_sel);
-	return count;
-}
-
 static ssize_t show_scaling_sched_screen_off(struct cpufreq_policy *policy, char *buf)
 {
 	return scnprintf(buf, 16, "%s\n",
@@ -1028,29 +995,6 @@ static ssize_t store_enable_auto_hotplug(struct cpufreq_policy *policy,
 	return count;
 }
 
-static ssize_t show_call_in_prog(struct cpufreq_policy *policy, char *buf)
-{
-	return sprintf(buf, "%d\n", call_in_progress);
-}
-
-static ssize_t show_disable_som_call_in_progress(struct cpufreq_policy *policy, char *buf)
-{
-	return sprintf(buf, "%u\n", Ldisable_som_call_in_progress);
-}
-static ssize_t store_disable_som_call_in_progress(struct cpufreq_policy *policy, const char *buf, size_t count)
-{
-	unsigned int value = 0;
-	unsigned int ret;
-	ret = sscanf(buf, "%u", &value);
-	if (value > 1)
-		value = 1;
-	if (value < 0)
-		value = 0;
-	Ldisable_som_call_in_progress = value;
-
-	return count;
-}
-
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
 cpufreq_freq_attr_ro(cpuinfo_min_freq);
 cpufreq_freq_attr_ro(cpuinfo_max_freq);
@@ -1062,7 +1006,6 @@ cpufreq_freq_attr_ro(bios_limit);
 cpufreq_freq_attr_ro(related_cpus);
 cpufreq_freq_attr_ro(affected_cpus);
 cpufreq_freq_attr_ro(cpu_utilization);
-cpufreq_freq_attr_ro(call_in_prog);
 #ifdef CONFIG_SEC_PM
 cpufreq_freq_attr_ro(cpu_load);
 /* Disable scaling_min_freq store */
@@ -1092,11 +1035,8 @@ cpufreq_freq_attr_ro(UV_mV_table_stock);
 cpufreq_freq_attr_rw(screen_off_scaling_enable);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
 cpufreq_freq_attr_rw(screen_off_GPU_mhz);
-cpufreq_freq_attr_rw(disable_som_call_in_progress);
 cpufreq_freq_attr_rw(scaling_governor_screen_off);
 cpufreq_freq_attr_rw(scaling_sched_screen_off);
-cpufreq_freq_attr_rw(scaling_governor_gps);
-cpufreq_freq_attr_rw(scaling_sched_gps);
 cpufreq_freq_attr_rw(enable_auto_hotplug);
 
 static struct attribute *default_attrs[] = {
@@ -1108,7 +1048,6 @@ static struct attribute *default_attrs[] = {
 	&scaling_max_freq_kt.attr,
 	&affected_cpus.attr,
 	&cpu_utilization.attr,
-	&call_in_prog.attr,
 #ifdef CONFIG_SEC_PM
 	&cpu_load.attr,
 #endif
@@ -1125,11 +1064,8 @@ static struct attribute *default_attrs[] = {
 	&screen_off_scaling_enable.attr,
 	&screen_off_scaling_mhz.attr,
 	&screen_off_GPU_mhz.attr,
-	&disable_som_call_in_progress.attr,
 	&scaling_governor_screen_off.attr,
 	&scaling_sched_screen_off.attr,
-	&scaling_governor_gps.attr,
-	&scaling_sched_gps.attr,
 	&enable_auto_hotplug.attr,
 	NULL
 };
@@ -2375,7 +2311,7 @@ void cpufreq_gov_resume(void)
 	struct cpufreq_policy *policy = NULL;
 	unsigned int value;
 	
-	if (!GPS_override && !cpu_is_offline(0) && scaling_governor_screen_off_sel_prev != NULL && scaling_governor_screen_off_sel_prev[0] != '\0')
+	if (!cpu_is_offline(0) && scaling_governor_screen_off_sel_prev != NULL && scaling_governor_screen_off_sel_prev[0] != '\0')
 	{
 		policy = cpufreq_cpu_get(0);
 		store_scaling_governor(policy, scaling_governor_screen_off_sel_prev, sizeof(scaling_governor_screen_off_sel_prev));
@@ -2384,7 +2320,7 @@ void cpufreq_gov_resume(void)
 	else
 		pr_alert("cpufreq_gov_resume_gov_DENIED: %s\n", scaling_governor_screen_off_sel_prev);
 
-	if (!GPS_override && !cpu_is_offline(0) && scaling_sched_screen_off_sel_prev != NULL && scaling_sched_screen_off_sel_prev[0] != '\0' && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
+	if (!cpu_is_offline(0) && scaling_sched_screen_off_sel_prev != NULL && scaling_sched_screen_off_sel_prev[0] != '\0' && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
    	{
 		elevator_change_relay(scaling_sched_screen_off_sel_prev, 2);
 		pr_alert("cpufreq_gov_resume_gov_SCHED: %s\n", scaling_sched_screen_off_sel_prev);
@@ -2392,7 +2328,7 @@ void cpufreq_gov_resume(void)
 	else
 		pr_alert("cpufreq_gov_resume_gov_SCHED_DENIED2: %s\n", scaling_sched_screen_off_sel_prev);
 
-	if (Lscreen_off_scaling_enable == 1 && (!call_in_progress || Ldisable_som_call_in_progress == 0))
+	if (Lscreen_off_scaling_enable == 1)
 	{
 		if (vfreq_lock == 1)
 		{
@@ -2403,12 +2339,8 @@ void cpufreq_gov_resume(void)
 		pr_alert("CPUFREQ_GOV_RESUME_FREQ2: %u\n", value);
 	}
 	
-	//GPU Control
-	if  (!call_in_progress || Ldisable_som_call_in_progress == 0)
-	{
 		if (Lscreen_off_GPU_mhz > 0)
 			set_max_gpuclk_so(0);
-	}
 }
 
 void cpufreq_gov_suspend(void)
@@ -2417,7 +2349,7 @@ void cpufreq_gov_suspend(void)
 	unsigned int ret = -EINVAL;
 	unsigned int value;
 
-	if (!GPS_override && !cpu_is_offline(0) && scaling_governor_screen_off_sel != NULL && scaling_governor_screen_off_sel[0] != '\0')
+	if (!cpu_is_offline(0) && scaling_governor_screen_off_sel != NULL && scaling_governor_screen_off_sel[0] != '\0')
 	{
 		policy = cpufreq_cpu_get(0);
 		ret = sscanf(policy->governor->name, "%15s", scaling_governor_screen_off_sel_prev);
@@ -2432,7 +2364,7 @@ void cpufreq_gov_suspend(void)
 	else
 		pr_alert("cpufreq_gov_suspend_gov_DENIED2: %s\n", scaling_governor_screen_off_sel);
 
-	if (!GPS_override && !cpu_is_offline(0) && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
+	if (!cpu_is_offline(0) && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
    	{
 		elevator_change_relay(scaling_sched_screen_off_sel, 1);
 		pr_alert("cpufreq_gov_suspend_gov_SCHED: %s\n", scaling_sched_screen_off_sel);
@@ -2440,7 +2372,7 @@ void cpufreq_gov_suspend(void)
 	else
 		pr_alert("cpufreq_gov_suspend_gov_SCHED_DENIED2: %s\n", scaling_sched_screen_off_sel);
 
-	if (Lscreen_off_scaling_enable == 1 && (!call_in_progress || Ldisable_som_call_in_progress == 0))
+	if (Lscreen_off_scaling_enable == 1)
 	{
 				if (vfreq_lock == 1)
 				{
@@ -2448,77 +2380,11 @@ void cpufreq_gov_suspend(void)
 					vfreq_lock_tempOFF = true;
 				}
 				value = Lscreen_off_scaling_mhz;
-					value = mhz_lvl;
 				pr_alert("cpufreq_gov_suspend_freq: %u\n", value);
-	}
+       }
 	//GPU Control
-	if (Lscreen_off_GPU_mhz > 0 && (!call_in_progress || Ldisable_som_call_in_progress == 0))
+	if (Lscreen_off_GPU_mhz > 0)
 		set_max_gpuclk_so(Lscreen_off_GPU_mhz);
-}
-
-void set_call_in_progress(bool state)
-{
-	call_in_progress = state;
-	//pr_alert("CALL IN PROGRESS: %d\n", state);
-}
-
-
-void set_gps_status(bool stat)
-{
-	struct cpufreq_policy *policy = NULL;
-	unsigned int ret = -EINVAL;
-
-	if (stat && !GPS_override)
-	{
-		GPS_override = stat;
-		//Set scheduler
-		if (!cpu_is_offline(0) && scaling_sched_gps_sel != NULL && scaling_sched_gps_sel[0] != '\0')
-		{
-			elevator_change_relay(scaling_sched_gps_sel, 1);
-			pr_alert("set_gps_status_SCHED: %s\n", scaling_sched_gps_sel);
-			ret = sscanf(scaling_sched_screen_off_sel_prev, "%15s", scaling_sched_gps_sel_prev);
-		}
-		else
-			pr_alert("set_gps_status_SCHED_DENIED2: %s\n", scaling_sched_gps_sel);
-		
-		//Set governor
-		if (!cpu_is_offline(0) && scaling_governor_gps_sel != NULL && scaling_governor_gps_sel[0] != '\0')
-		{
-			policy = cpufreq_cpu_get(0);
-			ret = sscanf(policy->governor->name, "%15s", scaling_governor_gps_sel_prev);
-			if (ret == 1)
-			{
-				store_scaling_governor(policy, scaling_governor_gps_sel, sizeof(scaling_governor_gps_sel));
-				pr_alert("set_gps_status_gov: %s\n", scaling_governor_gps_sel);
-			}
-			else
-				pr_alert("set_gps_status_gov_DENIED2: %s\n", scaling_governor_gps_sel);
-		}
-		else
-			pr_alert("set_gps_status_gov_DENIED3: %s\n", scaling_governor_gps_sel);
-	}
-	else if (!stat && GPS_override)
-	{
-		GPS_override = stat;
-		//Set scheduler
-		if (!cpu_is_offline(0) && scaling_sched_gps_sel_prev != NULL && scaling_sched_gps_sel_prev[0] != '\0' && scaling_sched_gps_sel != NULL && scaling_sched_gps_sel[0] != '\0')
-		{
-			elevator_change_relay(scaling_sched_gps_sel_prev, 2);
-			pr_alert("set_gps_status_SCHED: %s\n", scaling_sched_gps_sel_prev);
-		}
-		else
-			pr_alert("set_gps_status_SCHED_DENIED4: %s\n", scaling_sched_gps_sel_prev);
-
-		//Set governor
-		if (!cpu_is_offline(0) && scaling_governor_gps_sel_prev != NULL && scaling_governor_gps_sel_prev[0] != '\0')
-		{
-			policy = cpufreq_cpu_get(0);
-			store_scaling_governor(policy, scaling_governor_gps_sel_prev, sizeof(scaling_governor_gps_sel_prev));
-			pr_alert("set_gps_status_GOV: %s\n", scaling_governor_gps_sel_prev);
-		}
-		else
-			pr_alert("set_gps_status_GOV_DENIED5: %s\n", scaling_governor_gps_sel_prev);
-	}
 }
 
 void set_screen_on_off_mhz(bool onoff)

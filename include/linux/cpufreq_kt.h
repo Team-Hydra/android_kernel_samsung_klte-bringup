@@ -2,7 +2,6 @@
 #include <linux/cpu.h>
 
 extern bool ktoonservative_is_active;
-extern bool call_in_progress;
 
 extern unsigned int vfreq_lock;
 
@@ -18,11 +17,6 @@ extern void set_screen_on_off_mhz(bool onoff);
 
 extern void cpufreq_gov_suspend(void);
 extern void cpufreq_gov_resume(void);
-
-extern void set_gps_status(bool stat);
-extern void set_call_in_progress(bool state);
-extern void set_call_in_progress_prox(bool state);
-extern void set_call_in_progress_scrn(bool state);
 
 extern bool gkt_work_isinitd;
 extern struct work_struct gkt_online_work;
