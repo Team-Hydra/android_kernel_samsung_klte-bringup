@@ -1,12 +1,7 @@
 #include <linux/cpufreq.h>
 #include <linux/cpu.h>
 
-extern bool ktoonservative_is_active;
-
 extern unsigned int vfreq_lock;
-
-extern void ktoonservative_screen_is_on(bool state);
-extern void ktoonservative_boostpulse(bool boost_for_button);
 
 extern unsigned int isenable_oc;
 extern unsigned int isBooted;

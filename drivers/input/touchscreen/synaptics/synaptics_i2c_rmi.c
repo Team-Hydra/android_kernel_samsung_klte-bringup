@@ -1751,8 +1751,6 @@ static int synaptics_rmi4_f12_abs_report(struct synaptics_rmi4_data *rmi4_data,
 #endif
 	if (touch_count)
 	{
-		if (ktoonservative_is_active)
-			ktoonservative_boostpulse(false);
 		hotplugap_boostpulse();
 	}
 	

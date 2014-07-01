@@ -861,11 +861,6 @@ static irqreturn_t cypress_touchkey_interrupt(int irq, void *dev_id)
 
 	press = !(buf[0] & PRESS_BIT_MASK);
 	code = (int)(buf[0] & KEYCODE_BIT_MASK) - 1;
-	if (ktoonservative_is_active && press == 1 && (info->keycode[code] == 158 || info->keycode[code] == 139))
-	{
-		ktoonservative_boostpulse(true);
-		//pr_alert("KEY_PRESS: %d-%d\n", info->keycode[code], press);
-	}
 	//dev_info(&info->client->dev,
 	//		"%s: code=%d %s. fw_ver=0x%x, module_ver=0x%x \n", __func__,
 	//		code, press ? "pressed" : "released", info->ic_fw_ver, info->module_ver);
