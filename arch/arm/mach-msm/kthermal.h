@@ -35,5 +35,5 @@ static struct kmsm_thermal_data kmsm_thermal_info = {
 	.freq_steps_while_throttling = 1,
 	.minimum_throttle_mhz = 1036800,
 	.current_temp = 0,
-	.use_kthermal = 0,
+	.use_kthermal = 1,
 };
