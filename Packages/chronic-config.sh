@@ -16,14 +16,12 @@
 # Possible values
 
 # GOV+smartmax
-# GOV=smartassH3
 # GOV=linoheart
 # GOV=badass
 # GOV=wheatley
 # GOV=userspace
 # GOV=consevative
 # GOV=intelliactive
-# GOV=lagfee
 # GOV=performance
 # GOV=ondemand
 GOV=interactive
