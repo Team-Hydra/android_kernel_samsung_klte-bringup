@@ -57,9 +57,6 @@ static unsigned int Lscreen_off_scaling_enable = 0;
 static unsigned int Lscreen_off_scaling_mhz = 2457600;
 static unsigned int Lscreen_off_scaling_mhz_orig = 2457600;
 static unsigned long Lscreen_off_GPU_mhz = 0;
-static unsigned int Lbluetooth_scaling_mhz = 0;
-static unsigned int Lbluetooth_scaling_mhz_orig = 300000;
-static bool bluetooth_scaling_mhz_active = false;
 static unsigned int Lmusic_play_scaling_mhz = 0;
 static unsigned int Lmusic_play_scaling_mhz_orig = 300000;
 static bool music_play_scaling_mhz_active = false;
@@ -642,7 +639,6 @@ static ssize_t __ref store_scaling_min_freq(struct cpufreq_policy *policy, const
 		if (policy->cpu == 0)
 			set_cpu_min_max(value, 0, 1);
 
-	Lbluetooth_scaling_mhz_orig = value;
 	Lmusic_play_scaling_mhz_orig = value;
 	Lcharging_min_mhz_orig = value;
 	}
@@ -835,25 +831,6 @@ static ssize_t store_screen_off_GPU_mhz(struct cpufreq_policy *policy,
 	if (value < 200000000 && value != 0)
 		value = 200000000;
 	Lscreen_off_GPU_mhz = value;
-
-	return count;
-}
-
-static ssize_t show_bluetooth_scaling_mhz(struct cpufreq_policy *policy, char *buf)
-{
-	return sprintf(buf, "%u\n", Lbluetooth_scaling_mhz);
-}
-static ssize_t store_bluetooth_scaling_mhz(struct cpufreq_policy *policy,
-					const char *buf, size_t count)
-{
-	unsigned int value = 0;
-	unsigned int ret;
-	ret = sscanf(buf, "%u", &value);
-	if (value > GLOBALKT_MAX_FREQ_LIMIT)
-		value = GLOBALKT_MAX_FREQ_LIMIT;
-	if (value < GLOBALKT_MIN_FREQ_LIMIT && value != 0)
-		value = GLOBALKT_MIN_FREQ_LIMIT;
-	Lbluetooth_scaling_mhz = value;
 
 	return count;
 }
@@ -1378,34 +1355,6 @@ bool set_music_playing_state(bool val)
 	return ret;
 }
 
-void set_bluetooth_state(unsigned int val)
-{
-	unsigned int value;
-	if (Lbluetooth_scaling_mhz != 0)
-	{
-		if (vfreq_lock == 1)
-		{
-			vfreq_lock = 0;
-			vfreq_lock_tempOFF = true;
-		}
-		if (val == 1 && ((music_play_scaling_mhz_active && Lbluetooth_scaling_mhz > Lmusic_play_scaling_mhz) || !music_play_scaling_mhz_active) && ((Lcharging_mhz_active && Lbluetooth_scaling_mhz > Lcharging_min_mhz) || !Lcharging_mhz_active))
-		{
-			bluetooth_scaling_mhz_active = true;
-			value = Lbluetooth_scaling_mhz;
-			set_cpu_min_max(value, 0, 0);
-		}
-		else
-		{
-			bluetooth_scaling_mhz_active = false;
-			value = Lbluetooth_scaling_mhz_orig;
-			if (((music_play_scaling_mhz_active && value > Lmusic_play_scaling_mhz) || !music_play_scaling_mhz_active) && ((Lcharging_mhz_active && value > Lcharging_min_mhz) || !Lcharging_mhz_active))
-			{
-				set_cpu_min_max(value, 0, 0);
-			}
-		}
-	}
-}
-
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
 cpufreq_freq_attr_ro(cpuinfo_min_freq);
 cpufreq_freq_attr_ro(cpuinfo_max_freq);
@@ -1447,7 +1396,6 @@ cpufreq_freq_attr_ro(UV_mV_table_stock);
 cpufreq_freq_attr_rw(screen_off_scaling_enable);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
 cpufreq_freq_attr_rw(screen_off_GPU_mhz);
-cpufreq_freq_attr_rw(bluetooth_scaling_mhz);
 cpufreq_freq_attr_rw(music_play_scaling_mhz);
 cpufreq_freq_attr_rw(charging_max_mhz);
 cpufreq_freq_attr_rw(charging_min_mhz);
@@ -1489,7 +1437,6 @@ static struct attribute *default_attrs[] = {
 	&screen_off_scaling_enable.attr,
 	&screen_off_scaling_mhz.attr,
 	&screen_off_GPU_mhz.attr,
-	&bluetooth_scaling_mhz.attr,
 	&music_play_scaling_mhz.attr,
 	&charging_min_mhz.attr,
 	&charging_max_mhz.attr,
@@ -2825,8 +2772,6 @@ void cpufreq_gov_suspend(void)
 
 	if (Lscreen_off_scaling_enable == 1 && (!call_in_progress || Ldisable_som_call_in_progress == 0))
 	{
-		if ((bluetooth_scaling_mhz_active == true && Lscreen_off_scaling_mhz > Lbluetooth_scaling_mhz) || (bluetooth_scaling_mhz_active == false))
-		{
 			if ((music_play_scaling_mhz_active == true && Lscreen_off_scaling_mhz > Lmusic_play_scaling_mhz) || (music_play_scaling_mhz_active == false))
 			{
 				if (vfreq_lock == 1)
@@ -2844,7 +2789,6 @@ void cpufreq_gov_suspend(void)
 				}
 				pr_alert("cpufreq_gov_suspend_freq: %u\n", value);
 			}
-		}
 	}
 	//GPU Control
 	if (Lscreen_off_GPU_mhz > 0 && (!call_in_progress || Ldisable_som_call_in_progress == 0))

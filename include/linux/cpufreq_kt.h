@@ -28,9 +28,6 @@ extern void set_call_in_progress(bool state);
 extern void set_call_in_progress_prox(bool state);
 extern void set_call_in_progress_scrn(bool state);
 
-extern void set_bluetooth_state(unsigned int val);
-extern void set_bluetooth_state_kt(bool val);
-
 extern bool gkt_work_isinitd;
 extern struct work_struct gkt_online_work;
 extern struct workqueue_struct *gkt_wq;
