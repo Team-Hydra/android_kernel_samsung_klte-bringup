@@ -9,10 +9,6 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
-#include <linux/cpufreq_kt.h>
-unsigned int prev_cable_state;
-unsigned int is_charging;
-
 #include <linux/battery/sec_battery.h>
 #if defined(CONFIG_SENSORS_QPNP_ADC_VOLTAGE)
 #include <linux/qpnp/qpnp-adc.h>
@@ -26,16 +22,6 @@ unsigned int is_charging;
 #define TUNER_IS_OFF 0
 #endif
 
-//KT Specifics
-unsigned int gbatt_lvl_low = 0;
-unsigned int gbatt_lvl_high = 0;
-unsigned int gmhz_lvl_low = 0;
-unsigned int gmhz_lvl_high = 0;
-unsigned int gbatt_soc = 0;
-unsigned int gbatt_chg = 0;
-unsigned int gdisable_chrg = 0;
-extern unsigned int set_battery_max_level(unsigned int value);
-static unsigned int Lscreen_off_scaling_mhz_orig = 0;
 
 static struct device_attribute sec_battery_attrs[] = {
 	SEC_BATTERY_ATTR(batt_reset_soc),
@@ -1639,38 +1625,6 @@ static bool sec_bat_fullcharged_check(
 	return true;
 }
 
-void set_batt_mhz_info(unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high, unsigned int disable_chrg)
-{
-	gbatt_lvl_low = batt_lvl_low;
-	gbatt_lvl_high = batt_lvl_high;
-	gmhz_lvl_low = mhz_lvl_low;
-	gmhz_lvl_high = mhz_lvl_high;
-	gdisable_chrg = disable_chrg;
-}
-
-unsigned int get_batt_level(void)
-{
-	//Exit if user disables battery control while plugged in
-	if (gdisable_chrg == 1 && (gbatt_chg > 1))
-		return Lscreen_off_scaling_mhz_orig;
-
-	if (gbatt_lvl_low > 0 && gmhz_lvl_low > 0)
-	{
-		if (gbatt_soc <= gbatt_lvl_low)
-			return gmhz_lvl_low;
-
-	}
-	if (gbatt_lvl_high > 0 && gmhz_lvl_high > 0)
-	{
-		if (gbatt_soc <= gbatt_lvl_high)
-			return gmhz_lvl_high;
-	}
-	if ((gbatt_lvl_low > 0 && gbatt_soc > gbatt_lvl_low) || (gmhz_lvl_high > 0 && gbatt_soc > gbatt_lvl_high))
-		return Lscreen_off_scaling_mhz_orig;
-	else
-		return 0;
-}
-
 static void sec_bat_get_battery_info(
 				struct sec_battery_info *battery)
 {
@@ -1977,7 +1931,6 @@ static void sec_bat_set_polling(
 static void sec_bat_monitor_work(
 				struct work_struct *work)
 {
-	unsigned int mhz_lvl = 0;
 	struct sec_battery_info *battery =
 		container_of(work, struct sec_battery_info,
 		monitor_work.work);
@@ -2080,26 +2033,6 @@ skip_monitor:
 
 	dev_dbg(battery->dev, "%s: End\n", __func__);
 
-	if (battery->cable_type != prev_cable_state)
-	{
-		if (battery->cable_type == POWER_SUPPLY_TYPE_BATTERY)
-		{
-			is_charging = 0;
-		}
-		else
-		{
-			is_charging = 1;
-		}
-		send_cable_state(is_charging);
-		send_cable_state_kt(is_charging);
-	}
-	//KT battery Mhz settings
-	gbatt_soc = battery->capacity;
-	gbatt_chg = battery->cable_type;
-	mhz_lvl = get_batt_level();
-	if (mhz_lvl > 0)
-		Lscreen_off_scaling_mhz_orig = set_battery_max_level(mhz_lvl);
-	
 	return;
 }
 
@@ -3337,13 +3270,6 @@ static int sec_ps_get_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_ONLINE:
 		if (battery->ps_status) {
-			if ((battery->ps_enable == true) && (battery->ps_changed == true)) {
-				battery->ps_changed = false;
-
-				value.intval = POWER_SUPPLY_TYPE_POWER_SHARING;
-				psy_do_property(battery->pdata->charger_name, set,
-						POWER_SUPPLY_PROP_ONLINE, value);
-			}
 			val->intval = 1;
 		} else {
 			if (battery->ps_enable == true) {
@@ -3474,9 +3400,6 @@ static int batt_handle_notification(struct notifier_block *nb,
 			__func__, cable_type);
 	} else if (cable_type == POWER_SUPPLY_TYPE_POWER_SHARING) {
 		battery->ps_status = true;
-		battery->ps_enable = true;
-		battery->ps_changed = true;
-
 		dev_info(battery->dev,
 			"%s: power sharing cable plugin (%d)\n", __func__, battery->ps_status);
 	} else if (cable_type == POWER_SUPPLY_TYPE_WIRELESS) {
@@ -3926,7 +3849,6 @@ static int __devinit sec_battery_probe(struct platform_device *pdev)
 
 	battery->wc_status = 0;
 	battery->ps_status= 0;
-	battery->ps_changed= 0;
 	battery->wire_status = POWER_SUPPLY_TYPE_BATTERY;
 
 	alarm_init(&battery->event_termination_alarm,

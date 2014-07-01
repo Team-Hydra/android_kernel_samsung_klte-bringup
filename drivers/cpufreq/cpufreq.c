@@ -60,13 +60,6 @@ static unsigned long Lscreen_off_GPU_mhz = 0;
 static unsigned int Lmusic_play_scaling_mhz = 0;
 static unsigned int Lmusic_play_scaling_mhz_orig = 300000;
 static bool music_play_scaling_mhz_active = false;
-static unsigned int Lcharging_min_mhz = 0;
-static unsigned int Lcharging_min_mhz_orig = 300000;
-static unsigned int Lcharging_max_mhz = 0;
-static unsigned int Lcharging_max_mhz_orig = 2457600;
-static bool Lcharging_mhz_active = false;
-static bool Lcharging_mhz_active_block_min;
-static bool Lcharging_mhz_active_block_max;
 bool call_in_progress=false;
 static unsigned int Ldisable_som_call_in_progress = 0;
 static char scaling_governor_screen_off_sel[16];
@@ -81,14 +74,9 @@ static bool GPS_override = false;
 extern int elevator_change_relay(const char *name, int screen_status);
 static unsigned int Lenable_auto_hotplug = 0;
 
-unsigned int batt_lvl_low = 0;
-unsigned int batt_lvl_high = 0;
 unsigned int mhz_lvl_low = 0;
 unsigned int mhz_lvl_high = 0;
-unsigned int batt_ctrl_disable_chrg;
 
-extern void set_batt_mhz_info(unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high, unsigned int disable_chrg);
-extern unsigned int get_batt_level(void);
 extern void set_max_gpuclk_so(unsigned long val);
 
 //Global placeholder for CPU policies
@@ -577,39 +565,6 @@ static void set_cpu_min_max(unsigned int min, unsigned int max, unsigned int cor
 	queue_work_on(0, dbs_wq, &set_cpu_min_max_work);
 }
 
-void send_cable_state(unsigned int state)
-{
-	unsigned int min = 0;
-	unsigned int max = 0;
-	if (state)
-	{
-		if (Lcharging_min_mhz && ((music_play_scaling_mhz_active && Lcharging_min_mhz > Lmusic_play_scaling_mhz) || !music_play_scaling_mhz_active) && ((bluetooth_scaling_mhz_active && Lcharging_min_mhz > Lbluetooth_scaling_mhz) || !bluetooth_scaling_mhz_active))
-			min = Lcharging_min_mhz;
-		if (Lcharging_max_mhz)
-			max = Lcharging_max_mhz;
-		pr_alert("CHARGING MHZ ON %u-%u-%u-%u\n", Lcharging_min_mhz, Lcharging_max_mhz, min, max);
-		if (min > 0 || max > 0)
-		{
-			Lcharging_mhz_active = true;
-			set_cpu_min_max(min, max, 0);
-		}
-	}
-	else if (Lcharging_mhz_active)
-	{
-		unsigned int value;
-		value = Lcharging_min_mhz_orig;
-		if (value && !Lcharging_mhz_active_block_min && ((music_play_scaling_mhz_active && value > Lmusic_play_scaling_mhz) || !music_play_scaling_mhz_active) && ((bluetooth_scaling_mhz_active && value > Lbluetooth_scaling_mhz) || !bluetooth_scaling_mhz_active))
-			min = value;
-		value = Lcharging_max_mhz_orig;
-		if (value && !Lcharging_mhz_active_block_max)
-			max = value;
-		if (!Lcharging_mhz_active_block_min && !Lcharging_mhz_active_block_max)
-			Lcharging_mhz_active = false;
-		pr_alert("CHARGING MHZ OFF %u-%u-%u-%u\n", Lcharging_min_mhz, Lcharging_max_mhz, min, max);
-		if (min > 0 || max > 0)
-			set_cpu_min_max(min, max, 0);
-	}
-}
 
 static ssize_t __ref store_scaling_min_freq(struct cpufreq_policy *policy, const char *buf, size_t count)
 {
@@ -640,7 +595,6 @@ static ssize_t __ref store_scaling_min_freq(struct cpufreq_policy *policy, const
 			set_cpu_min_max(value, 0, 1);
 
 	Lmusic_play_scaling_mhz_orig = value;
-	Lcharging_min_mhz_orig = value;
 	}
 	
 	return count;
@@ -677,7 +631,6 @@ static ssize_t __ref store_scaling_max_freq(struct cpufreq_policy *policy, const
 			set_cpu_min_max(0, value, 1);
 
 		Lscreen_off_scaling_mhz_orig = value;
-		Lcharging_max_mhz_orig = value;
 	}
 	return count;
 }
@@ -850,66 +803,6 @@ static ssize_t store_music_play_scaling_mhz(struct cpufreq_policy *policy,
 	if (value < GLOBALKT_MIN_FREQ_LIMIT && value != 0)
 		value = GLOBALKT_MIN_FREQ_LIMIT;
 	Lmusic_play_scaling_mhz = value;
-
-	return count;
-}
-
-static ssize_t show_charging_min_mhz(struct cpufreq_policy *policy, char *buf)
-{
-	return sprintf(buf, "%u\n", Lcharging_min_mhz);
-}
-static ssize_t store_charging_min_mhz(struct cpufreq_policy *policy,
-					const char *buf, size_t count)
-{
-	unsigned int value = 0;
-	unsigned int ret;
-	ret = sscanf(buf, "%u", &value);
-	if (value > GLOBALKT_MAX_FREQ_LIMIT)
-		value = GLOBALKT_MAX_FREQ_LIMIT;
-	if (value < GLOBALKT_MIN_FREQ_LIMIT && value != 0)
-		value = GLOBALKT_MIN_FREQ_LIMIT;
-	Lcharging_min_mhz = value;
-	
-	if (value == 0 && Lcharging_mhz_active && is_charging)
-	{
-		Lcharging_mhz_active_block_max = true;
-		send_cable_state(0);
-		Lcharging_mhz_active_block_max = false;
-		if (Lcharging_max_mhz ==0)
-			Lcharging_mhz_active = false;
-	}
-	else
-		send_cable_state(is_charging);
-
-	return count;
-}
-
-static ssize_t show_charging_max_mhz(struct cpufreq_policy *policy, char *buf)
-{
-	return sprintf(buf, "%u\n", Lcharging_max_mhz);
-}
-static ssize_t store_charging_max_mhz(struct cpufreq_policy *policy,
-					const char *buf, size_t count)
-{
-	unsigned int value = 0;
-	unsigned int ret;
-	ret = sscanf(buf, "%u", &value);
-	if (value > GLOBALKT_MAX_FREQ_LIMIT)
-		value = GLOBALKT_MAX_FREQ_LIMIT;
-	if (value < GLOBALKT_MIN_FREQ_LIMIT && value != 0)
-		value = GLOBALKT_MIN_FREQ_LIMIT;
-	Lcharging_max_mhz = value;
-
-	if (value == 0 && Lcharging_mhz_active && is_charging)
-	{
-		Lcharging_mhz_active_block_min = true;
-		send_cable_state(0);
-		Lcharging_mhz_active_block_min = false;
-		if (Lcharging_min_mhz ==0)
-			Lcharging_mhz_active = false;
-	}
-	else
-		send_cable_state(is_charging);
 
 	return count;
 }
@@ -1163,125 +1056,6 @@ static ssize_t show_call_in_prog(struct cpufreq_policy *policy, char *buf)
 	return sprintf(buf, "%d\n", call_in_progress);
 }
 
-static ssize_t show_battery_ctrl_batt_lvl_low(struct cpufreq_policy *policy,  char *buf)
-{
-  return sprintf(buf, "%u\n", batt_lvl_low);
-}
-
-static ssize_t store_battery_ctrl_batt_lvl_low(struct cpufreq_policy *policy, const char *buf, size_t count)
-{
-  unsigned int input;
-  int ret;
-  ret = sscanf(buf, "%u", &input);
-
-  if (ret != 1)
-    return -EINVAL;
-  
-  if (input < 0 || input > 100)
-    input = 0;
-  batt_lvl_low = input;
-  set_batt_mhz_info(batt_lvl_low, batt_lvl_high, mhz_lvl_low, mhz_lvl_high, batt_ctrl_disable_chrg);
-  return count;
-}
-
-static ssize_t show_battery_ctrl_batt_lvl_high(struct cpufreq_policy *policy,  char *buf)
-{
-  return sprintf(buf, "%u\n", batt_lvl_high);
-}
-
-static ssize_t store_battery_ctrl_batt_lvl_high(struct cpufreq_policy *policy, const char *buf, size_t count)
-{
-  unsigned int input;
-  int ret;
-  ret = sscanf(buf, "%u", &input);
-
-  if (ret != 1)
-    return -EINVAL;
-  
-  if (input < 0 || input > 100)
-    input = 0;
-  batt_lvl_high = input;
-  set_batt_mhz_info(batt_lvl_low, batt_lvl_high, mhz_lvl_low, mhz_lvl_high, batt_ctrl_disable_chrg);
-  return count;
-}
-
-static ssize_t show_battery_ctrl_cpu_mhz_lvl_low(struct cpufreq_policy *policy, char *buf)
-{
-  return sprintf(buf, "%u\n", mhz_lvl_low);
-}
-
-
-static ssize_t store_battery_ctrl_cpu_mhz_lvl_low(struct cpufreq_policy *policy, const char *buf, size_t count)
-{
-  unsigned int input;
-  int ret;
-
-  ret = sscanf(buf, "%u", &input);
-
-  if (ret != 1)
-    return -EINVAL;
-  
-  //pr_alert("BATT_SET_LVL_LOW1: %u-%u-%u\n", input, policy->min, policy->max);
-  
-  if (input < 300000 || input > 2457600)
-    input = 0;
-  //pr_alert("BATT_SET_LVL_LOW2: %u-%u-%u\n", input, policy->min, policy->max);
-  mhz_lvl_low = input;
-  //pr_alert("BATT_SET_LVL_LOW3: %u-%u-%u\n", dbs_tuners_ins.battery_ctrl_cpu_mhz_lvl_low, policy->min, policy->max);
-  set_batt_mhz_info(batt_lvl_low, batt_lvl_high, mhz_lvl_low, mhz_lvl_high, batt_ctrl_disable_chrg);
-  return count;
-}
-
-static ssize_t show_battery_ctrl_cpu_mhz_lvl_high(struct cpufreq_policy *policy, char *buf)
-{
-  return sprintf(buf, "%u\n", mhz_lvl_high);
-}
-
-
-static ssize_t store_battery_ctrl_cpu_mhz_lvl_high(struct cpufreq_policy *policy, const char *buf, size_t count)
-{
-  unsigned int input;
-  int ret;
-
-  ret = sscanf(buf, "%u", &input);
-
-  if (ret != 1)
-    return -EINVAL;
-  
-  //pr_alert("BATT_SET_LVL_LOW1: %u-%u-%u\n", input, policy->min, policy->max);
-  
-  if (input < 100000 || input > 2100000)
-    input = 0;
-  //pr_alert("BATT_SET_LVL_LOW2: %u-%u-%u\n", input, policy->min, policy->max);
-  mhz_lvl_high = input;
-  //pr_alert("BATT_SET_LVL_LOW3: %u-%u-%u\n", dbs_tuners_ins.battery_ctrl_cpu_mhz_lvl_low, policy->min, policy->max);
-  set_batt_mhz_info(batt_lvl_low, batt_lvl_high, mhz_lvl_low, mhz_lvl_high, batt_ctrl_disable_chrg);
-  return count;
-}
-
-static ssize_t show_battery_ctrl_disable_chrg(struct cpufreq_policy *policy, char *buf)
-{
-  	return sprintf(buf, "%u\n", batt_ctrl_disable_chrg);
-}
-
-
-static ssize_t store_battery_ctrl_disable_chrg(struct cpufreq_policy *policy, const char *buf, size_t count)
-{
-  	unsigned int input;
-  	int ret;
-
-  	ret = sscanf(buf, "%u", &input);
-
-  	if (ret != 1)
-		return -EINVAL;
-  
-	if (input != 0 && input != 1)
-  	  	input = 0;
-  	batt_ctrl_disable_chrg = input;
-  	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, mhz_lvl_low, mhz_lvl_high, batt_ctrl_disable_chrg);
-  	return count;
-}
-
 static ssize_t show_disable_som_call_in_progress(struct cpufreq_policy *policy, char *buf)
 {
 	return sprintf(buf, "%u\n", Ldisable_som_call_in_progress);
@@ -1298,29 +1072,6 @@ static ssize_t store_disable_som_call_in_progress(struct cpufreq_policy *policy,
 	Ldisable_som_call_in_progress = value;
 
 	return count;
-}
-
-unsigned int set_battery_max_level(unsigned int value)
-{
-	struct cpufreq_policy *policy = NULL;
-	policy = cpufreq_cpu_get(0);
-	if ((Lonoff == 1  && policy->max != value)|| (Lonoff == 0 && value < Lscreen_off_scaling_mhz))
-	{
-		if (vfreq_lock == 1)
-		{
-			vfreq_lock = 0;
-			vfreq_lock_tempOFF = true;
-		}
-		if (!Lcharging_mhz_active)
-		{
-			set_cpu_min_max(0, value, 0);
-		}
-		pr_alert("SET_BATTERY_MAX_LEVEL: %u\n", value);
-	}
-	if (Lscreen_off_scaling_mhz_orig != 0)
-		return Lscreen_off_scaling_mhz_orig;
-	else
-		return policy->user_policy.max;
 }
 
 bool set_music_playing_state(bool val)
@@ -1397,19 +1148,12 @@ cpufreq_freq_attr_rw(screen_off_scaling_enable);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
 cpufreq_freq_attr_rw(screen_off_GPU_mhz);
 cpufreq_freq_attr_rw(music_play_scaling_mhz);
-cpufreq_freq_attr_rw(charging_max_mhz);
-cpufreq_freq_attr_rw(charging_min_mhz);
 cpufreq_freq_attr_rw(disable_som_call_in_progress);
 cpufreq_freq_attr_rw(scaling_governor_screen_off);
 cpufreq_freq_attr_rw(scaling_sched_screen_off);
 cpufreq_freq_attr_rw(scaling_governor_gps);
 cpufreq_freq_attr_rw(scaling_sched_gps);
 cpufreq_freq_attr_rw(enable_auto_hotplug);
-cpufreq_freq_attr_rw(battery_ctrl_batt_lvl_low);
-cpufreq_freq_attr_rw(battery_ctrl_batt_lvl_high);
-cpufreq_freq_attr_rw(battery_ctrl_cpu_mhz_lvl_low);
-cpufreq_freq_attr_rw(battery_ctrl_cpu_mhz_lvl_high);
-cpufreq_freq_attr_rw(battery_ctrl_disable_chrg);
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -1438,19 +1182,12 @@ static struct attribute *default_attrs[] = {
 	&screen_off_scaling_mhz.attr,
 	&screen_off_GPU_mhz.attr,
 	&music_play_scaling_mhz.attr,
-	&charging_min_mhz.attr,
-	&charging_max_mhz.attr,
 	&disable_som_call_in_progress.attr,
 	&scaling_governor_screen_off.attr,
 	&scaling_sched_screen_off.attr,
 	&scaling_governor_gps.attr,
 	&scaling_sched_gps.attr,
 	&enable_auto_hotplug.attr,
-	&battery_ctrl_batt_lvl_low.attr,
-	&battery_ctrl_batt_lvl_high.attr,
-	&battery_ctrl_cpu_mhz_lvl_low.attr,
-	&battery_ctrl_cpu_mhz_lvl_high.attr,
-	&battery_ctrl_disable_chrg.attr,
 	NULL
 };
 
@@ -2694,7 +2431,6 @@ void cpufreq_gov_resume(void)
 {
 	struct cpufreq_policy *policy = NULL;
 	unsigned int value;
-	unsigned int mhz_lvl = 0;
 	
 	if (!GPS_override && !cpu_is_offline(0) && scaling_governor_screen_off_sel_prev != NULL && scaling_governor_screen_off_sel_prev[0] != '\0')
 	{
@@ -2721,15 +2457,7 @@ void cpufreq_gov_resume(void)
 			vfreq_lock_tempOFF = true;
 		}
 		value = Lscreen_off_scaling_mhz_orig;
-		mhz_lvl = get_batt_level();
-		if (mhz_lvl > 0)
-			value = mhz_lvl;
-		if (!Lcharging_mhz_active)
-		{
-			set_cpu_min_max(0, value, 0);
-			pr_alert("CPUFREQ_GOV_RESUME_FREQ: %u\n", value);
-		}
-		//pr_alert("CPUFREQ_GOV_RESUME_FREQ2: %u\n", value);
+		pr_alert("CPUFREQ_GOV_RESUME_FREQ2: %u\n", value);
 	}
 	
 	//GPU Control
@@ -2745,7 +2473,6 @@ void cpufreq_gov_suspend(void)
 	struct cpufreq_policy *policy = NULL;
 	unsigned int ret = -EINVAL;
 	unsigned int value;
-	unsigned int mhz_lvl;
 
 	if (!GPS_override && !cpu_is_offline(0) && scaling_governor_screen_off_sel != NULL && scaling_governor_screen_off_sel[0] != '\0')
 	{
@@ -2780,13 +2507,7 @@ void cpufreq_gov_suspend(void)
 					vfreq_lock_tempOFF = true;
 				}
 				value = Lscreen_off_scaling_mhz;
-				mhz_lvl = get_batt_level();
-				if (mhz_lvl > 0)
 					value = mhz_lvl;
-				if (!Lcharging_mhz_active)
-				{
-					set_cpu_min_max(0, value, 0);
-				}
 				pr_alert("cpufreq_gov_suspend_freq: %u\n", value);
 			}
 	}

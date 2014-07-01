@@ -19,10 +19,6 @@ extern void set_screen_on_off_mhz(bool onoff);
 extern void cpufreq_gov_suspend(void);
 extern void cpufreq_gov_resume(void);
 
-extern void send_cable_state(unsigned int state);
-extern void send_cable_state_kt(unsigned int state);
-extern unsigned int is_charging;
-
 extern void set_gps_status(bool stat);
 extern void set_call_in_progress(bool state);
 extern void set_call_in_progress_prox(bool state);
