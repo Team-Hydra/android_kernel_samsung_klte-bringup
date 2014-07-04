@@ -29,9 +29,9 @@ struct kmsm_thermal_data {
 static struct kmsm_thermal_data kmsm_thermal_info = {
 	.sensor_id = 0,
 	.isthrottling = false,
-	.poll_speed = 1000,
+	.poll_speed = 500,
 	.temp_limit_degC_start = 77,
-	.temp_limit_degC_stop = 75,
+	.temp_limit_degC_stop = 72,
 	.freq_steps_while_throttling = 1,
 	.minimum_throttle_mhz = 1036800,
 	.current_temp = 0,
