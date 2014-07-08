@@ -15,7 +15,7 @@
 
 # Possible values
 
-# GOV+smartmax
+# GOV=smartmax
 # GOV=linoheart
 # GOV=badass
 # GOV=wheatley
@@ -89,7 +89,7 @@ FASTCHARGE=0
 
 
 # Config 3D GPU setting
-    echo $GPU > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/max_gpuclk
+    echo $GPU > /sys/class/kgsl/kgsl-3d0/max_gpuclk
 
 
 # Config USB forced fastcharge
