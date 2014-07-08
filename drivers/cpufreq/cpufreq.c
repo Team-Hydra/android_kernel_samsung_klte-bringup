@@ -62,7 +62,9 @@ static char scaling_governor_screen_off_sel_prev[16];
 static char scaling_sched_screen_off_sel[16];
 static char scaling_sched_screen_off_sel_prev[16];
 extern int elevator_change_relay(const char *name, int screen_status);
+#ifdef CONFIG_ARM_AUTO_HOTPLUG
 static unsigned int Lenable_auto_hotplug = 0;
+#endif
 
 unsigned int mhz_lvl_low = 0;
 unsigned int mhz_lvl_high = 0;
@@ -74,7 +76,9 @@ struct cpufreq_policy trmlpolicy[10];
 //Kthermal limit holder to stop govs from setting CPU speed higher than the thermal limit
 unsigned int kthermal_limit = 0;
 
+#ifdef CONFIG_ARM_AUTO_HOTPLUG
 extern void apenable_auto_hotplug(bool state);
+#endif
 
 struct work_struct set_cpu_min_max_work;
 static unsigned int work_speed_min;
@@ -984,6 +988,7 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 	return sprintf(buf, "%u\n", policy->cpuinfo.max_freq);
 }
 
+#ifdef CONFIG_ARM_AUTO_HOTPLUG
 static ssize_t show_enable_auto_hotplug(struct cpufreq_policy *policy, char *buf)
 {
 	return sprintf(buf, "%u\n", Lenable_auto_hotplug);
@@ -998,6 +1003,7 @@ static ssize_t store_enable_auto_hotplug(struct cpufreq_policy *policy,
 	apenable_auto_hotplug((bool) Lenable_auto_hotplug);
 	return count;
 }
+#endif
 
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
 cpufreq_freq_attr_ro(cpuinfo_min_freq);
@@ -1040,7 +1046,9 @@ cpufreq_freq_attr_rw(screen_off_scaling_mhz);
 cpufreq_freq_attr_rw(screen_off_GPU_mhz);
 cpufreq_freq_attr_rw(scaling_governor_screen_off);
 cpufreq_freq_attr_rw(scaling_sched_screen_off);
+#ifdef CONFIG_ARM_AUTO_HOTPLUG
 cpufreq_freq_attr_rw(enable_auto_hotplug);
+#endif
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -1068,7 +1076,9 @@ static struct attribute *default_attrs[] = {
 	&screen_off_GPU_mhz.attr,
 	&scaling_governor_screen_off.attr,
 	&scaling_sched_screen_off.attr,
+#ifdef CONFIG_ARM_AUTO_HOTPLUG
 	&enable_auto_hotplug.attr,
+#endif
 	NULL
 };
 

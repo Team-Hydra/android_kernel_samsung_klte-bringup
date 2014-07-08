@@ -64,8 +64,10 @@ struct qpnp_pin_cfg synaptics_int_set[] = {
 
 struct list_head exp_fn_list;
 
+#ifdef CONFIG_ARM_AUTO_HOTPLUG
 //KT specifics
 extern void hotplugap_boostpulse(void);
+#endif
 
 void synaptics_power_ctrl(struct synaptics_rmi4_data *rmi4_data, bool enable);
 
@@ -1749,10 +1751,12 @@ static int synaptics_rmi4_f12_abs_report(struct synaptics_rmi4_data *rmi4_data,
 	else
 		synaptics_set_dvfs_lock(rmi4_data, 0);
 #endif
+#ifdef CONFIG_ARM_AUTO_HOTPLUG
 	if (touch_count)
 	{
 		hotplugap_boostpulse();
 	}
+#endif
 	
 	return touch_count;
 }
