@@ -35,12 +35,22 @@ MAXFREQ=2457600
 MINFREQ=300000
 
 
-# Config 3D GPU clock
+# Config GPU clock Max Frequency
 # 389000000 = 389mhz (Super Underclocked)
 # 462400000 = 450mhz (Underclocked)
 # 578000000 = 578mhz (Default)
 # 657500000 = 657mhz (Performance)
-GPU=578000000
+GPU_MAX=578000000
+
+
+# Config GPU clock Min Frequency
+
+# ** Choose either Samsung default 320Mhtz or Standard 200Mhtz
+# ** key is as follows..
+
+# 320Mhtz = 4
+# 200Mhtz = 5
+GPU_MIN=4
 
 
 # Enable Fastcharge
@@ -89,7 +99,8 @@ FASTCHARGE=0
 
 
 # Config 3D GPU setting
-    echo $GPU > /sys/class/kgsl/kgsl-3d0/max_gpuclk
+    echo $GPU_MAX > /sys/class/kgsl/kgsl-3d0/max_gpuclk
+    echo $GPU_MIN > /sys/class/kgsl/kgsl-3d0/min_pwrlevel
 
 
 # Config USB forced fastcharge
