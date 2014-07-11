@@ -56,6 +56,13 @@ GPU_MAX=578000000
 GPU_MIN=4
 
 
+# I/O Scheduler
+# 
+# Available schedulers: cfq, bfq, fiops, noop, deadline, row, sio, vr, zen, fifo
+# Device default: cfq
+SCHED=cfq
+
+
 # Enable Fastcharge
 # 0 = disabled
 # 1 = substitute AC to USB charging always
@@ -108,4 +115,8 @@ FASTCHARGE=0
 
 # Config USB forced fastcharge
     echo "$FASTCHARGE" > /sys/kernel/fast_charge/force_fast_charge
+
+
+# Config I/O sched
+    echo $SCHED > /sys/block/mmcblk0/queue/scheduler
 
