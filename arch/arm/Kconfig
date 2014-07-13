@@ -1699,8 +1699,11 @@ config HOTPLUG_CPU
 
 config ARM_AUTO_HOTPLUG
 	bool "Auto hotplugging based on scheduler runqueue load for ARM SoCs"
-	default y
+	default n
 
+config CHRONIC_HOTPLUG
+	bool "Auto hotplugging based on scheduler runqueue load for ARM Snapdragon 801 SoCs"
+	default y
 
 config LOCAL_TIMERS
 	bool "Use local timer interrupts"
