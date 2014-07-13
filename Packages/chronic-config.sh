@@ -70,6 +70,13 @@ SCHED=cfq
 FASTCHARGE=0
 
 
+# Chronic Hotplug
+# set custom "enable_core_thresholds" This is represented as four numbers each being for the corosponding core (0,1,2.3)
+# the numbers are derived from cpu load times 10
+# 0 = always on
+# 999 = never on
+ENABLE_CORE_THRES="0 290 340 390"
+
 
 # End of configurable options #
 
@@ -119,4 +126,8 @@ FASTCHARGE=0
 
 # Config I/O sched
     echo $SCHED > /sys/block/mmcblk0/queue/scheduler
+
+
+# Config Chronic Hotplug
+    echo $ENABLE_CORE_THRES > /sys/devices/system/cpu/cpufreq/chronic_hotplug/enable_core_thresholds
 
