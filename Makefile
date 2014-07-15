@@ -397,7 +397,7 @@ endif
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
-		   -Wno-format-security -Wno-unused-function -Wno-array-bounds \
+		   -Wno-format-security -Wno-unused-function -Wno-array-bounds -Wno-return-type \
 		   -fno-delete-null-pointer-checks -Wno-unused-variable -Wno-maybe-uninitialized -Wno-cpp
 
 ifdef CONFIG_CC_OPTIMIZE_ALOT
