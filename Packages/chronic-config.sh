@@ -64,6 +64,13 @@ GPU_MIN=4
 SCHED=cfq
 
 
+# Enable/Disable FSYNC
+#
+# Y = Enabled (default)
+# N = Disabled
+FSYNC=Y
+
+
 # Enable Fastcharge
 # 0 = disabled
 # 1 = substitute AC to USB charging always
@@ -131,4 +138,8 @@ ENABLE_CORE_THRES="0 290 340 390"
 
 # Config Chronic Hotplug
     echo $ENABLE_CORE_THRES > /sys/devices/system/cpu/cpufreq/chronic_hotplug/enable_core_thresholds
+
+
+# Config FSYNC
+    echo $FSYNC > /sys/module/sync/parameters/fsync_enabled
 
