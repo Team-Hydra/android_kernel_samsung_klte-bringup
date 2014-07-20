@@ -1,32 +1,38 @@
 #!/system/bin/sh
-#Script originally made by Axetilen. Modified by Sultan (android1234567)
-#Updated for albinoman887's ChronicKernel (98% of the credit goes to android1234567. Thanks so much man :)
-#Updated for ChronicKernel-pyramid-linaro
-#adapted for Galaxy S4 kernel
-#adapted for Galaxy S5 ChronicKernel
+# ChronicKernel shell configuration script, only use with Chronickernel for KLTE (SGS5)
+# written by albinoman887
 
 # Configure your options here #
 
 
 # Config default CPU Gonvernor
-# Kernel Default: intelliactive
+#
+# Kernel Default: interactive
 # Uncomment desired governor by removing the "#" symbal before desired gov
 # and add a "#" to the old line
 
 # Possible values
 
-# GOV=smartmax
-# GOV=linoheart
+# GOV=abyssplug
+# GOV=abyssplugv2
 # GOV=badass
-# GOV=wheatley
-# GOV=userspace
 # GOV=consevative
+# GOV=dancedance
 # GOV=intelliactive
-# GOV=performance
+# GOV=intellidemand
+# GOV=linoheart
+# GOV=nightmare
 # GOV=ondemand
+# GOV=pegasusq
+# GOV=performance
+# GOV=powersave
+# GOV=smartmax
+# GOV=userspace
+# GOV=wheatley
 GOV=interactive
 
 # Config CPU frequency
+#
 # Default: 2457600 (2.45Ghtz)
 # Recomended: 2764800 (2.76Ghtz)
 # available frequencies:
@@ -43,7 +49,7 @@ MINFREQ=300000
 # 389000000 = 389mhz (Super Underclocked)
 # 462400000 = 450mhz (Underclocked)
 # 578000000 = 578mhz (Default)
-# 657500000 = 657mhz (Performance)
+# 657500000 = 657mhz (Overclocked)
 GPU_MAX=578000000
 
 
@@ -115,7 +121,7 @@ ENABLE_CORE_THRES="0 290 340 390"
     echo $MINFREQ > /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq
 
 
-## Config CPU governor
+# Config CPU governor
     sleep 3
     echo "$GOV" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
     echo "$GOV" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
