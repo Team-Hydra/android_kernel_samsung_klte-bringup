@@ -11,6 +11,10 @@
 #define FRAM_VERSION	"1.0"
 
 #include <linux/miscdevice.h>
+<<<<<<< HEAD
+=======
+#include <linux/module.h>
+>>>>>>> eeac748... Linux 3.4.0-> 3.4.99
 #include <linux/proc_fs.h>
 #include <linux/mm.h>
 #include <linux/io.h>

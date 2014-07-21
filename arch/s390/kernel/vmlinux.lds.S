@@ -8,7 +8,11 @@
 
 #ifndef CONFIG_64BIT
 OUTPUT_FORMAT("elf32-s390", "elf32-s390", "elf32-s390")
+<<<<<<< HEAD
 OUTPUT_ARCH(s390)
+=======
+OUTPUT_ARCH(s390:31-bit)
+>>>>>>> eeac748... Linux 3.4.0-> 3.4.99
 ENTRY(startup)
 jiffies = jiffies_64 + 4;
 #else

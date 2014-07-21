@@ -25,6 +25,10 @@
 #include <linux/err.h>
 #include <linux/fs.h>
 #include <linux/slab.h>
+<<<<<<< HEAD
+=======
+#include <linux/rcupdate.h>
+>>>>>>> eeac748... Linux 3.4.0-> 3.4.99
 #include <asm/uaccess.h>
 #include <asm/pgtable.h>
 #include <asm/io.h>
@@ -107,6 +111,10 @@ void cpu_idle(void)
 {
 	/* endless idle loop with no priority at all */
 	for (;;) {
+<<<<<<< HEAD
+=======
+		rcu_idle_enter();
+>>>>>>> eeac748... Linux 3.4.0-> 3.4.99
 		while (!need_resched()) {
 			void (*idle)(void);
 
@@ -121,6 +129,10 @@ void cpu_idle(void)
 			}
 			idle();
 		}
+<<<<<<< HEAD
+=======
+		rcu_idle_exit();
+>>>>>>> eeac748... Linux 3.4.0-> 3.4.99
 
 		schedule_preempt_disabled();
 	}

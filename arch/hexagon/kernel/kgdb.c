@@ -1,7 +1,11 @@
 /*
  * arch/hexagon/kernel/kgdb.c - Hexagon KGDB Support
  *
+<<<<<<< HEAD
  * Copyright (c) 2011, The Linux Foundation. All rights reserved.
+=======
+ * Copyright (c) 2011, Code Aurora Forum. All rights reserved.
+>>>>>>> eeac748... Linux 3.4.0-> 3.4.99
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
