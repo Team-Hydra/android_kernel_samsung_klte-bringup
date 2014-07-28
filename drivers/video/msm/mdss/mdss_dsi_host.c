@@ -850,7 +850,8 @@ int mdss_dsi_cmds_rx(struct mdss_dsi_ctrl_pdata *ctrl,
 			struct dsi_cmd_desc *cmds, int rlen)
 {
 	int data_byte, rx_byte, dlen, end;
-	int short_response, diff, pkt_size, ret = 0;
+	int short_response, pkt_size, ret = 0;
+	int diff = 0;
 	int i;
 	struct dsi_buf *tp, *rp;
 	char cmd;
