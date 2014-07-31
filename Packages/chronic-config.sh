@@ -2,6 +2,8 @@
 # ChronicKernel shell configuration script, only use with Chronickernel for KLTE (SGS5)
 # written by albinoman887
 
+### AOSP Version ###
+
 # Configure your options here #
 
 
@@ -89,7 +91,7 @@ FASTCHARGE=0
 # the numbers are derived from cpu load times 10
 # 0 = always on
 # 999 = never on
-ENABLE_CORE_THRES="0 290 340 390"
+ENABLE_CORE_THRES="0 300 350 400"
 
 
 # End of configurable options #

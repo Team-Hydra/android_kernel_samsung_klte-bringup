@@ -53,7 +53,7 @@
 #define ENABLE_ALL_LOAD_THRESHOLD	440
 #define ENABLE_LOAD_THRESHOLD		290
 #define DISABLE_LOAD_THRESHOLD		250
-static int enable_load[] = { 0, 290, 340, 390 };
+static int enable_load[] = { 0, 300, 350, 400 };
 static int hotplug_cpu_single_on[] = { 0, 0, 0, 0 };
 static int hotplug_cpu_single_off[] = { 0, 0, 0, 0 };
 /* Control flags */
