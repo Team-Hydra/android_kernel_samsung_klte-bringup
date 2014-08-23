@@ -72,6 +72,9 @@ CONFIG_SND_SOC_ES705=y
 CONFIG_SND_SOC_ES705_SLIM=y
 CONFIG_FW_LOADER=y
 CONFIG_FIRMWARE_IN_KERNEL=y
+# Audio firmware needed for almost all devices execept eur and spr
+# included because eur config is international
+CONFIG_EXTRA_FIRMWARE="audience-es705-fw.bin audience-es705-vs.bin higalaxy_en_us_am.bin higalaxy_en_us_gram6.bin"
 CONFIG_EXTRA_FIRMWARE_DIR="firmware"
 #
 # DHA Solution
@@ -137,6 +140,10 @@ CONFIG_IIO_ST_HWMON=y
 # NFC
 #
 CONFIG_BCM2079X_NFC_I2C=y
+# PN 547 needed for almost all devices execept eur and spr
+# included because eur config is international
+CONFIG_NFC_PN547=y
+CONFIG_NFC_PN547_PMC8974_CLK_REQ=y
 #
 # Battery & Charger
 #
