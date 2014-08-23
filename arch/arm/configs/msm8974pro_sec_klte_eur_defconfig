@@ -72,9 +72,6 @@ CONFIG_SND_SOC_ES705=y
 CONFIG_SND_SOC_ES705_SLIM=y
 CONFIG_FW_LOADER=y
 CONFIG_FIRMWARE_IN_KERNEL=y
-# Audio firmware needed for almost all devices execept eur and spr
-# included because eur config is international
-CONFIG_EXTRA_FIRMWARE="audience-es705-fw.bin audience-es705-vs.bin higalaxy_en_us_am.bin higalaxy_en_us_gram6.bin"
 CONFIG_EXTRA_FIRMWARE_DIR="firmware"
 #
 # DHA Solution
