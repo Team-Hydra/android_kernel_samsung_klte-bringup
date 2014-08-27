@@ -21,10 +21,10 @@ export USE_CCACHE=1
 #Enable FIPS mode
 #export USE_SEC_FIPS_MODE=true
 export ARCH=arm
-#export CROSS_COMPILE=/home/ktoonsez/cm/prebuilts/gcc/linux-x86/arm/arm-eabi-4.7/bin/arm-eabi-
+export CROSS_COMPILE=$SRC_ROOT/prebuilts/gcc/linux-x86/arm/arm-eabi-4.7/bin/arm-eabi-
 #export CROSS_COMPILE=$PARENT_DIR/linaro4.9-a15/bin/arm-cortex_a15-linux-gnueabihf-
 #export CROSS_COMPILE=$SRC_ROOT/prebuilt/linux-x86/toolchain/linaro/bin/arm-eabi-
-export CROSS_COMPILE=$SRC_ROOT/prebuilt/linux-x86/toolchain/new/bin/arm-cortex_a15-linux-gnueabihf-
+#export CROSS_COMPILE=$SRC_ROOT/prebuilt/linux-x86/toolchain/new/bin/arm-cortex_a15-linux-gnueabihf-
 export ENABLE_GRAPHITE=true
 
 time_start=$(date +%s.%N)
@@ -58,13 +58,13 @@ rm arch/arm/boot/zImage-dtb
 echo "Make the kernel"
 make msm8974_sec_defconfig VARIANT_DEFCONFIG=msm8974pro_sec_klte_eur_defconfig SELINUX_DEFCONFIG=selinux_defconfig
 
-echo "Modding .config file - "$KTVER
-sed -i 's,CONFIG_LOCALVERSION="-ChronicKernel",CONFIG_LOCALVERSION="'$KTVER'",' .config
+#echo "Modding .config file - "$KTVER
+#sed -i 's,CONFIG_LOCALVERSION="-ChronicKernel",CONFIG_LOCALVERSION="'$KTVER'",' .config
 
-if [ "$RLSVER" != "" ]; then
-echo "Release version number set - disabling LOCALVERSION_AUTO"
-sed -i 's,CONFIG_LOCALVERSION_AUTO=y,# CONFIG_LOCALVERSION_AUTO is not set,' .config
-fi
+#if [ "$RLSVER" != "" ]; then
+#echo "Release version number set - disabling LOCALVERSION_AUTO"
+#sed -i 's,CONFIG_LOCALVERSION_AUTO=y,# CONFIG_LOCALVERSION_AUTO is not set,' .config
+#fi
 
 HOST_CHECK=`uname -n`
 if [ $HOST_CHECK = 'chronic-buildbox' ]; then
